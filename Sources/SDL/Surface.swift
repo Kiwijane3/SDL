@@ -5,7 +5,7 @@
 //  Created by Alsey Coleman Miller on 6/6/17.
 //
 
-import CSDL2
+@_exported import CSDL2
 
 /// SDL Surface
 public final class SDLSurface {

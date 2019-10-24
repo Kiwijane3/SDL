@@ -1,4 +1,4 @@
-import CSDL2
+@_exported import CSDL2
 
 /// [Simple DirectMedia Layer](https://wiki.libsdl.org/)
 public struct SDL {

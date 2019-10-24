@@ -5,7 +5,7 @@
 //  Created by Alsey Coleman Miller on 6/6/17.
 //
 
-import CSDL2
+@_exported import CSDL2
 
 /// SDL Renderer
 public final class SDLRenderer {
@@ -28,7 +28,7 @@ public final class SDLRenderer {
         let internalPointer = SDL_CreateRenderer(window.internalPointer, Int32(driver.rawValue), options.rawValue)
         self.internalPointer = try internalPointer.sdlThrow()
     }
-    
+	
     /// The color used for drawing operations (Rect, Line and Clear).
     public func drawColor() throws -> (red: UInt8, green: UInt8, blue: UInt8, alpha: UInt8) {
         

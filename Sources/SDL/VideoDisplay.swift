@@ -5,7 +5,7 @@
 //  Created by Alsey Coleman Miller on 10/19/18.
 //
 
-import CSDL2
+@_exported import CSDL2
 
 /// SDL Video Display
 public struct SDLVideoDisplay: IndexRepresentable {

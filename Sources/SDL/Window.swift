@@ -5,7 +5,7 @@
 //  Created by Alsey Coleman Miller on 6/6/17.
 //
 
-import CSDL2
+@_exported import CSDL2
 
 /// SDL Window
 public final class SDLWindow {
@@ -31,6 +31,12 @@ public final class SDLWindow {
     }
     
     // MARK: - Accessors
+	
+	public var windowFlags: UInt32 {
+		get {
+			return SDL_GetWindowFlags(internalPointer);
+		}
+	}
     
     /// Get the numeric ID of a window, for logging purposes.
     public var identifier: UInt {
@@ -57,8 +63,21 @@ public final class SDLWindow {
             return (Int(width), Int(height))
         }
         
-        set { SDL_SetWindowSize(internalPointer, Int32(size.width), Int32(size.height)) }
+        set { SDL_SetWindowSize(internalPointer, Int32(newValue.width), Int32(newValue.height)) }
     }
+	
+	// The position of the window
+	public var position: (x: Int, y: Int) {
+		get {
+			var x: Int32 = 0;
+			var y: Int32 = 0;
+			SDL_GetWindowPosition(internalPointer, &x, &y);
+			return (Int(x), Int(y));
+		}
+		set {
+			SDL_SetWindowPosition(internalPointer, Int32(newValue.x), Int32(newValue.y));
+		}
+	}
     
     /// Size of a window's underlying drawable in pixels (for use with glViewport).
     ///
@@ -75,15 +94,32 @@ public final class SDLWindow {
     
     /// The output size in pixels of a rendering context.
     public var rendererSize: (width: Int, height: Int)? {
-        
         var width: Int32 = 0
         var height: Int32 = 0
-        guard SDL_GetRendererOutputSize(internalPointer, &width, &height) >= 0
-            else { return nil }
+		let resultCode = SDL_GetRendererOutputSize(internalPointer, &width, &height);
+        guard resultCode >= 0
+			else {
+				let error = String(cString: SDL_GetError());
+				debugPrint("Failed to retrieve renderer output size; resultCode: \(resultCode), error: \(error)");
+				return nil;
+		}
         
         return (Int(width), Int(height))
     }
     
+	public var mouseCaptured: Bool {
+		get {
+			return Option.mouseCapture.isContained(in: windowFlags);
+		}
+		set {
+			if newValue {
+				SDL_CaptureMouse(SDL_bool(1));
+			} else {
+				SDL_CaptureMouse(SDL_bool(0));
+			}
+		}
+	}
+	
     // MARK: - Methods
     
     /// Copy the window surface to the screen.
@@ -104,6 +140,33 @@ public final class SDLWindow {
             return SDL_SetWindowDisplayMode(internalPointer, nil) >= 0
         }
     }
+	
+	public func minimise() {
+		SDL_MinimizeWindow(internalPointer);
+	}
+	
+	public func maximise() {
+		SDL_MaximizeWindow(internalPointer);
+	}
+	
+	public func close() {
+		SDL_DestroyWindow(internalPointer);
+	}
+	
+	// Returns whether this window has focus for keyboard events.
+	public var keyFocused: Bool {
+		get {
+			return Option.inputFocus.isContained(in: SDL_GetWindowFlags(internalPointer));
+		}
+	}
+	
+	// Returns whether this window has focus for mouse and touch events.
+	public var mouseFocused: Bool {
+		get {
+			return Option.mouseFocus.isContained(in: SDL_GetWindowFlags(internalPointer));
+		}
+	}
+	
 }
 
 // MARK: - Supporting Types
