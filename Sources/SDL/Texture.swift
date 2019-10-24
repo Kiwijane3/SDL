@@ -37,7 +37,7 @@ public final class SDLTexture {
                                                       Int32(width),
                                                       Int32(height))
         
-        self.internalPointer = try internalPointer.sdlThrow()
+        self.internalPointer = try internalPointer.sdlThrow(type: type(of: self))
     }
     
     /// Create a texture from an existing surface.
@@ -47,7 +47,7 @@ public final class SDLTexture {
     public init(renderer: SDLRenderer, surface: SDLSurface) throws {
         
         let internalPointer = SDL_CreateTextureFromSurface(renderer.internalPointer, surface.internalPointer)
-        self.internalPointer = try internalPointer.sdlThrow()
+        self.internalPointer = try internalPointer.sdlThrow(type: type(of: self))
     }
     
     // MARK: - Accessors
@@ -59,7 +59,7 @@ public final class SDLTexture {
         var width = Int32()
         var height = Int32()
         
-        try SDL_QueryTexture(internalPointer, &format, &access, &width, &height).sdlThrow()
+        try SDL_QueryTexture(internalPointer, &format, &access, &width, &height).sdlThrow(type: type(of: self))
         
         return Attributes(format: SDLPixelFormat.Format(rawValue: format),
                           access: SDLTexture.Access(rawValue: access)!,
@@ -71,17 +71,72 @@ public final class SDLTexture {
     public func blendMode() throws -> BitMaskOptionSet<SDLBlendMode> {
         
         var value = SDL_BlendMode(0)
-        try SDL_GetTextureBlendMode(internalPointer, &value).sdlThrow()
+        try SDL_GetTextureBlendMode(internalPointer, &value).sdlThrow(type: type(of: self))
         return BitMaskOptionSet<SDLBlendMode>(rawValue: value.rawValue)
     }
     
     /// Set the blend mode used for texture copy operations.
     public func setBlendMode(_ newValue: BitMaskOptionSet<SDLBlendMode>) throws {
         
-        try SDL_SetTextureBlendMode(internalPointer, SDL_BlendMode(newValue.rawValue)).sdlThrow()
+        try SDL_SetTextureBlendMode(internalPointer, SDL_BlendMode(newValue.rawValue)).sdlThrow(type: type(of: self))
     }
     
+    /**
+     Get the additional alpha value used in render copy operations.
+     
+     - Note:
+     When this texture is rendered, during the copy operation the source alpha value is modulated by this alpha value according to the following formula:
+     
+     `srcA = srcA * (alpha / 255)`
+     
+     Alpha modulation is not always supported by the renderer; it will return -1 if alpha modulation is not supported.
+     */
+    public func alphaModulation() throws -> UInt8 {
+        
+        var alpha: UInt8 = 0
+        try SDL_GetTextureAlphaMod(internalPointer, &alpha).sdlThrow(type: type(of: self))
+        return alpha
+    }
+    
+    /**
+     Set an additional alpha value used in render copy operations.
+     
+     - Parameter alpha: the source alpha value multiplied into copy operations.
+     
+     - Note:
+     When this texture is rendered, during the copy operation the source alpha value is modulated by this alpha value according to the following formula:
+     
+     `srcA = srcA * (alpha / 255)`
+     
+     Alpha modulation is not always supported by the renderer; it will return -1 if alpha modulation is not supported.
+     */
+    public func setAlphaModulation(_ alpha: UInt8) throws {
+        
+        try SDL_SetTextureAlphaMod(internalPointer, alpha).sdlThrow(type: type(of: self))
+    }
+
+    
     // MARK: - Methods
+     
+    /// Update the given texture rectangle with new pixel data.
+    /// - Parameters:
+    ///     - rect: A pointer to the rectangle to lock for access.
+    ///             If the rect is `nil`, the entire texture will be updated.
+    ///     - body: The closure is called with the pixel pointer and pitch.
+    ///     - pointer: The pixel pointer.
+    ///     - pitch: The pitch.
+    public func update(for rect: SDL_Rect? = nil, pixels: UnsafeMutableRawPointer, pitch: Int) throws {
+        let rectPointer: UnsafeMutablePointer<SDL_Rect>?
+        if let rect = rect {
+            rectPointer = UnsafeMutablePointer.allocate(capacity: 1)
+            rectPointer?.pointee = rect
+        } else {
+            rectPointer = nil
+        }
+        defer { rectPointer?.deallocate() }
+    
+        try SDL_UpdateTexture(internalPointer, rectPointer, pixels, Int32(pitch)).sdlThrow(type: type(of: self))
+    }
     
     /// Lock a portion of the texture for write-only pixel access (only valid for streaming textures).
     /// - Parameters:
@@ -113,7 +168,7 @@ public final class SDLTexture {
         var pixels: UnsafeMutableRawPointer? = nil
         
         /// must be SDL_TEXTUREACCESS_STREAMING or throws
-        try SDL_LockTexture(internalPointer, rectPointer, &pixels, &pitch).sdlThrow()
+        try SDL_LockTexture(internalPointer, rectPointer, &pixels, &pitch).sdlThrow(type: type(of: self))
         
         defer { SDL_UnlockTexture(internalPointer) }
         

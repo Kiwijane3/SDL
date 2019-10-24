@@ -20,13 +20,14 @@ public final class SDLSurface {
         SDL_FreeSurface(internalPointer)
     }
     
-    public init(rgb size: (width: Int, height: Int),
-                 depth: Int = 32,
-                 mask: (red: UInt, green: UInt, blue: UInt, alpha: UInt) = (0,0,0,0)) throws {
+    /// Create an RGB surface.
+    public init(rgb mask: (red: UInt, green: UInt, blue: UInt, alpha: UInt),
+                size: (width: Int, height: Int),
+                depth: Int = 32) throws {
         
         let internalPointer = SDL_CreateRGBSurface(0, CInt(size.width), CInt(size.height), CInt(depth), CUnsignedInt(mask.red), CUnsignedInt(mask.green), CUnsignedInt(mask.blue), CUnsignedInt(mask.alpha))
         
-        self.internalPointer = try internalPointer.sdlThrow()
+        self.internalPointer = try internalPointer.sdlThrow(type: type(of: self))
     }
     
     // Get the SDL surface associated with the window.
@@ -38,7 +39,7 @@ public final class SDLSurface {
     public init(window: SDLWindow) throws {
         
         let internalPointer = SDL_GetWindowSurface(window.internalPointer)
-        self.internalPointer = try internalPointer.sdlThrow()
+        self.internalPointer = try internalPointer.sdlThrow(type: type(of: self))
     }
     
     // MARK: - Accessors
@@ -100,7 +101,7 @@ public final class SDLSurface {
     /// as critical system locks may be held during this time.
     internal func lock() throws {
         
-        try SDL_LockSurface(internalPointer).sdlThrow()
+        try SDL_LockSurface(internalPointer).sdlThrow(type: type(of: self))
     }
     
     internal func unlock() {
@@ -111,6 +112,18 @@ public final class SDLSurface {
     public func blit(to surface: SDLSurface, source: SDL_Rect? = nil, destination: SDL_Rect? = nil) throws {
         
         // TODO rects
-        try SDL_UpperBlit(self.internalPointer, nil, surface.internalPointer, nil).sdlThrow()
+        try SDL_UpperBlit(internalPointer, nil, surface.internalPointer, nil).sdlThrow(type: type(of: self))
+    }
+    
+    public func fill(rect: SDL_Rect? = nil, color: SDLColor) throws {
+        
+        let rectPointer: UnsafePointer<SDL_Rect>?
+        if let rect = rect {
+            rectPointer = withUnsafePointer(to: rect) { $0 }
+        } else {
+            rectPointer = nil
+        }
+        
+        try SDL_FillRect(internalPointer, rectPointer, color.rawValue).sdlThrow(type: type(of: self))
     }
 }

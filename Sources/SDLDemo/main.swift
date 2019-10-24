@@ -15,9 +15,11 @@ if renderDrivers.isEmpty == false {
             info.options.forEach { print("  \($0)") }
             print("Formats:")
             info.formats.forEach { print("  \($0)") }
-            print("Maximum Size:")
-            print("  Width: \(info.maximumSize.width)")
-            print("  Height: \(info.maximumSize.height)")
+            if info.maximumSize.width > 0 || info.maximumSize.height > 0 {
+                print("Maximum Size:")
+                print("  Width: \(info.maximumSize.width)")
+                print("  Height: \(info.maximumSize.height)")
+            }
             print("=======")
         } catch {
             print("Could not get information for driver \(driver.rawValue)")
@@ -39,13 +41,12 @@ func main() throws {
                                frame: (x: .centered, y: .centered, width: windowSize.width, height: windowSize.height),
                                options: [.resizable, .shown])
     
-    let framesPerSecond = UInt((try? window.displayMode())?.refreshRate ?? 60)
+    let framesPerSecond = try window.displayMode().refreshRate
     
     print("Running at \(framesPerSecond) FPS")
     
     // renderer
     let renderer = try SDLRenderer(window: window)
-    try renderer.setDrawColor((0xFF, 0xFF, 0xFF, 0xFF))
     
     var frame = 0
     
@@ -60,38 +61,35 @@ func main() throws {
         // increment ticker
         frame += 1
         let startTime = SDL_GetTicks()
-        
         let eventType = SDL_EventType(rawValue: event.type)
         
         switch eventType {
-            
         case SDL_QUIT, SDL_APP_TERMINATING:
-            
             isRunning = false
-            
         case SDL_WINDOWEVENT:
-            
             if event.window.event == UInt8(SDL_WINDOWEVENT_SIZE_CHANGED.rawValue) {
-                
                 needsDisplay = true
             }
-            
         default:
-            
             break
         }
         
         if needsDisplay {
             
-            // get data for surface
-            let textureSize = (width: 100, height: 100)
-            let imageSurface = try SDLSurface(rgb: textureSize, depth: 32)
+            try renderer.setDrawColor(red: 0xFF, green: 0xFF, blue: 0xFF, alpha: 0xFF)
+            try renderer.clear()
             
-            let texture = try SDLTexture(renderer: renderer, surface: imageSurface)
+            let surface = try SDLSurface(rgb: (0, 0, 0, 0), size: (width: 1, height: 1), depth: 32)
+            let color = SDLColor(
+                format: try SDLPixelFormat(format: .argb8888),
+                red: 25, green: 50, blue: .max, alpha: .max / 2
+            )
+            try surface.fill(color: color)
+            let surfaceTexture = try SDLTexture(renderer: renderer, surface: surface)
+            try surfaceTexture.setBlendMode([.alpha])
+            try renderer.copy(surfaceTexture, destination: SDL_Rect(x: 100, y: 100, w: 200, h: 200))
             
             // render to screen
-            try renderer.clear()
-            try renderer.copy(texture, destination: SDL_Rect(x: 50, y: 50, w: Int32(textureSize.width), h: Int32(textureSize.height)))
             renderer.present()
             
             print("Did redraw screen")
@@ -108,4 +106,11 @@ func main() throws {
 }
 
 do { try main() }
-catch { fatalError("SDL failed: \(error)") }
+catch let error as SDLError {
+    print("Error: \(error.debugDescription)")
+    exit(EXIT_FAILURE)
+}
+catch {
+    print("Error: \(error)")
+    exit(EXIT_FAILURE)
+}
