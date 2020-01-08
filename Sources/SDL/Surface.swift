@@ -30,8 +30,9 @@ public final class SDLSurface {
         self.internalPointer = try internalPointer.sdlThrow(type: type(of: self))
     }
 	
-	public init(size: (width: Int, height: Int), depth: Int = 32, format: SDLPixelFormat.Format) {
-		let internalPointer = SDL_CreateRGBSurfaceWithFormat(0, size.width, size.height, depth, format.rawValue);
+	public init(size: (width: Int, height: Int), depth: Int = 32, format: SDLPixelFormat.Format) throws {
+		let internalPointer = SDL_CreateRGBSurfaceWithFormat(0, Int32(size.width), Int32(size.height), Int32(depth), format.rawValue);
+		self.internalPointer = try internalPointer.sdlThrow(type: type(of: self));
 	}
     
     // Get the SDL surface associated with the window.
