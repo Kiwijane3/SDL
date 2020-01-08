@@ -92,6 +92,19 @@ public final class SDLWindow {
         return (Int(width), Int(height))
     }
     
+	public var borderless: Bool {
+		get {
+			return Option.borderless.isContained(in: self.windowFlags);
+		}
+		set {
+			if newValue {
+				SDL_SetWindowBordered(internalPointer, SDL_FALSE);
+			} else {
+				SDL_SetWindowBordered(internalPointer, SDL_TRUE);
+			}
+		}
+	}
+	
     /// Raise a window above other windows and set the input focus
     public func raise() {
         
