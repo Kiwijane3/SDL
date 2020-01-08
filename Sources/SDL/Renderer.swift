@@ -82,6 +82,10 @@ public final class SDLRenderer {
         try SDL_RenderSetLogicalSize(internalPointer, width, height).sdlThrow(type: type(of: self))
     }
     
+	public func setOpacity(_ value: Float32) {
+		SDL_SetWindowOpacity(internalPointer, value);
+	}
+	
     // MARK: - Methods
     
     /// Clear the current rendering target with the drawing color
