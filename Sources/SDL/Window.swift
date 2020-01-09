@@ -190,7 +190,8 @@ public final class SDLWindow {
 	public func setShape(surface: SDLSurface) {
 		let mode = UnsafeMutablePointer<SDL_WindowShapeMode>.allocate(capacity: 1);
 		mode.initialize(to: SDL_WindowShapeMode(mode: ShapeModeDefault, parameters: SDL_WindowShapeParams()));
-		SDL_SetWindowShape(internalPointer, surface.internalPointer, mode);
+		let result = SDL_SetWindowShape(internalPointer, surface.internalPointer, mode);
+		debugPrint(result);
 	}
 	
 }

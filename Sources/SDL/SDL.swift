@@ -25,6 +25,7 @@ public struct SDL {
         
         return SDL_QuitSubSystem(subSystems.rawValue)
     }
+	
 }
 
 // MARK: - Supporting Types
