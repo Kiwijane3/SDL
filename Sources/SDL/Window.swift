@@ -22,12 +22,16 @@ public final class SDLWindow {
     
     /// Create a window with the specified position, dimensions, and flags.
     public init(title: String,
-                frame: (x: Position, y: Position, width: Int, height: Int),
+				frame: (x: Position, y: Position, width: Int, height: Int), shaped: Bool = false,
                 options: BitMaskOptionSet<SDLWindow.Option> = []) throws {
         
-        let internalPointer = SDL_CreateWindow(title, frame.x.rawValue, frame.y.rawValue, Int32(frame.width), Int32(frame.height), options.rawValue)
-        
-        self.internalPointer = try internalPointer.sdlThrow(type: type(of: self))
+		let internalPointer: OpaquePointer
+		if shaped {
+			internalPointer = SDL_CreateShapedWindow(title, UInt32(frame.x.rawValue), UInt32(frame.y.rawValue), UInt32(frame.width), UInt32(frame.height), options.rawValue);
+		} else {
+			internalPointer = SDL_CreateWindow(title, frame.x.rawValue, frame.y.rawValue, Int32(frame.width), Int32(frame.height), options.rawValue)
+		}
+		self.internalPointer = internalPointer;
     }
     
     // MARK: - Accessors
@@ -172,18 +176,21 @@ public final class SDLWindow {
 		SDL_DestroyWindow(internalPointer);
 	}
 	
-	// Returns whether this window has focus for keyboard events.
-	public var keyFocused: Bool {
+	public var isShaped: Bool {
 		get {
-			return Option.inputFocus.isContained(in: SDL_GetWindowFlags(internalPointer));
+			let value = SDL_IsShapedWindow(internalPointer);
+			if value == SDL_TRUE {
+				return true;
+			} else {
+				return false;
+			}
 		}
 	}
 	
-	// Returns whether this window has focus for mouse and touch events.
-	public var mouseFocused: Bool {
-		get {
-			return Option.mouseFocus.isContained(in: SDL_GetWindowFlags(internalPointer));
-		}
+	public func setShape(surface: SDLSurface) {
+		let mode = UnsafeMutablePointer<SDL_WindowShapeMode>.allocate(capacity: 1);
+		mode.initialize(to: SDL_WindowShapeMode(mode: ShapeModeDefault, parameters: SDL_WindowShapeParams()));
+		SDL_SetWindowShape(internalPointer, surface.internalPointer, mode);
 	}
 	
 }
